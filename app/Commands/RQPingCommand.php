@@ -6,14 +6,14 @@ use Discord\Builders\Components\Button;
 use Discord\Parts\Interactions\Interaction;
 use Laracord\Commands\Command;
 
-class RGPingCommand extends Command
+class RQPingCommand extends Command
 {
     /**
      * The command name.
      *
      * @var string
      */
-    protected $name = 'rgping';
+    protected $name = 'rqping';
 
     /**
      * The command description.
@@ -33,7 +33,7 @@ class RGPingCommand extends Command
     {
         return $this
             ->message('Ping? Pong!')
-            ->title('RGPing')
+            ->title('RQPing')
             ->field('Response time', $message->timestamp->diffForHumans(null, true))
             ->button('Laracord Resources', route: 'resources', emoji: '💻', style: Button::STYLE_SECONDARY)
             ->reply($message);
