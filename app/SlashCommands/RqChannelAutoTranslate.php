@@ -3,6 +3,8 @@
 namespace App\SlashCommands;
 
 use Discord\Parts\Interactions\Interaction;
+use Discord\Parts\Interactions\Command\Option;
+use App\Models\ChannelTranslate;
 use App\Traits\CheckServerPermission;
 use Laracord\Commands\SlashCommand;
 
@@ -27,7 +29,31 @@ class RqChannelAutoTranslate extends SlashCommand
      *
      * @var array
      */
-    protected $options = [];
+    protected $options = [
+        [
+            'name'        => 'status',
+            'description' => 'View the current autotranslate status for this channel.',
+            'type'        => Option::SUB_COMMAND,
+        ],
+        [
+            'name'        => 'off',
+            'description' => 'Disable autotranslate for this channel.',
+            'type'        => Option::SUB_COMMAND,
+        ],
+        [
+            'name'        => 'on',
+            'description' => 'Enable autotranslate and select the channel the translation is sent to.',
+            'type'        => Option::SUB_COMMAND,
+            'options'     => [
+                [
+                    'name'        => 'channel',
+                    'description' => 'The channel to enable autotranslate to.',
+                    'type'        => Option::CHANNEL,
+                    'required'    => true,
+                ],
+            ],
+        ],
+    ];
 
     /**
      * The permissions required to use the command.
@@ -66,23 +92,61 @@ class RqChannelAutoTranslate extends SlashCommand
             return;
         }
 
-        $interaction->respondWithMessage(
-            $this
-              ->message()
-              ->title('Rq Channel Translate')
-              ->content('Hello world!')
-              ->button('👋', route: 'wave')
-              ->build()
-        );
+        // check in Table ChannelTranslate if there is an entry for the current channel_id and for the current diccord Server (guild_id),
+        $hasTranslate = ChannelTranslate::where('channel_id', $interaction->channel_id)
+            ->where('guild_id', $interaction->guild_id)
+            ->exists();
+
+        if(array_key_exists('status', $this->value())) {
+            if( $hasTranslate) {
+                return $this
+                    ->message('Automatic translation is currently enabled for this channel.')
+                    ->reply($interaction);
+            } else {
+                return $this
+                    ->message('Automatic translation is disabled for this channel.')
+                    ->reply($interaction);
+            }
+        } else if(array_key_exists('off', $this->value())) {
+            // remove the entry from the database
+            ChannelTranslate::where('channel_id', $interaction->channel_id)
+                ->where('guild_id', $interaction->guild_id)
+                ->delete();
+
+            return $this
+                ->message('Automatic translation is now disabled for this channel.')
+                ->reply($interaction);
+        } else if(!$hasTranslate && array_key_exists('on', $this->value()) && $this->value('on.channel')) {
+            // add entry to the database with the channel_id, guild_id and target_channel_id
+            $this->enableAutomaticChannelTranslation($interaction->guild_id, $interaction->channel_id, $this->value('on.channel'));
+
+            return $this
+                ->message('Automatic translation is now enabled for this channel.')
+                ->reply($interaction);
+            ;
+        }
+
+        // fallback if no valid subcommand or options were provided
+        return $this
+            ->message('Invalid subcommand or missing channel option. Please use /rq-channel-autotranslate with a valid subcommand and options.')
+            ->reply($interaction);
     }
 
     /**
-     * The command interaction routes.
+     * Enable automatic channel translation from one channel to another.
+     * if there is already a record for the same guild_id and channel_id, update the target_channel_id
+     * @param string $guild_id
+     * @param string $source_channel_id
+     * @param string $target_channel_id
+     * @return ChannelTranslate
      */
-    public function interactions(): array
+    private function enableAutomaticChannelTranslation(string $guild_id, string $source_channel_id, string $target_channel_id): ChannelTranslate
     {
-        return [
-            'wave' => fn (Interaction $interaction) => $this->message('👋')->reply($interaction),
-        ];
+        // create a record in the database with the guild_id, channel_id and target_channel_id, if there is already a record for the same guild_id and channel_id, update the target_channel_id
+        return ChannelTranslate::updateOrCreate(
+            ['guild_id' => $guild_id, 'channel_id' => $source_channel_id],
+            ['target_channel_id' => $target_channel_id]
+        );
     }
+
 }

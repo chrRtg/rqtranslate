@@ -12,7 +12,8 @@ class ChannelTranslate extends Model
      * @var array<string>
      */
     protected $fillable = [
-        'discord_id',
+        'guild_id',
         'channel_id',
+        'target_channel_id',
     ];
 }

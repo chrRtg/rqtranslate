@@ -12,6 +12,6 @@ class GuildRegistered extends Model
      * @var array<string>
      */
     protected $fillable = [
-        'discord_id'
+        'guild_id'
     ];
 }

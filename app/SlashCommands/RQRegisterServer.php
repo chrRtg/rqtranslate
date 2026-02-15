@@ -92,7 +92,7 @@ class RQRegisterServer extends SlashCommand
     private function registeredGuilds(string $guild_id): GuildRegistered
     {
         return GuildRegistered::firstOrCreate(
-            ['discord_id' => $guild_id]
+            ['guild_id' => $guild_id]
         );
     }
 }

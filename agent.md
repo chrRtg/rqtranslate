@@ -40,7 +40,7 @@
 ### User Model
 The User model includes:
 - `username` - Discord username
-- `discord_id` - Unique Discord user ID
+- `guild_id` - Unique Discord user ID
 - `is_admin` - Admin flag
 - Laravel Sanctum API token support
 - Helper method `getHighlightAttribute()` for Discord mentions

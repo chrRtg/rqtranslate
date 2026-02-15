@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('guild_registereds', function (Blueprint $table) {
             $table->id();
-            $table->string('discord_id')->index()->unique();
+            $table->string('guild_id')->index()->unique();
             $table->timestamps();
         });
     }

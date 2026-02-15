@@ -12,7 +12,7 @@ trait CheckServerPermission
     public function isDiscordAllowed($messageOrInteraction, $quiet = false): bool
     {
         // check if messageOrInteraction->guild_id is in database GuildRegistered as dicord_id
-        if (\App\Models\GuildRegistered::where('discord_id', $messageOrInteraction->guild_id)->exists()) {
+        if (\App\Models\GuildRegistered::where('guild_id', $messageOrInteraction->guild_id)->exists()) {
             return true;
         }
 
