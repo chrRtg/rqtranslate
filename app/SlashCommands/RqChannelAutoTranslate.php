@@ -3,6 +3,7 @@
 namespace App\SlashCommands;
 
 use Discord\Parts\Interactions\Interaction;
+use App\Traits\CheckServerPermission;
 use Laracord\Commands\SlashCommand;
 
 class RqChannelAutoTranslate extends SlashCommand
@@ -55,8 +56,16 @@ class RqChannelAutoTranslate extends SlashCommand
      * @param  \Discord\Parts\Interactions\Interaction  $interaction
      * @return mixed
      */
+
+    use CheckServerPermission;
+
     public function handle($interaction)
     {
+
+        if (! $this->isDiscordAllowed($interaction)) {
+            return;
+        }
+
         $interaction->respondWithMessage(
             $this
               ->message()
