@@ -57,7 +57,7 @@ class RqChannelAutoTranslate extends SlashCommand
                     'type' => Option::STRING,
                     'required' => true,
                     'choices' => [
-                        ['name' => '🇬🇧 English (English)', 'value' => 'en'],
+                        ['name' => '🇬🇧 English (English)', 'value' => 'en-us'],
                         ['name' => '🇫🇷 Français (French)', 'value' => 'fr'],
                         ['name' => '🇪🇸 Español (Spanish)', 'value' => 'es'],
                         ['name' => '🇵🇱 Polski (Polish)', 'value' => 'pl'],
