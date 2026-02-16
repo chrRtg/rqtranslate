@@ -15,5 +15,6 @@ class ChannelTranslate extends Model
         'guild_id',
         'channel_id',
         'target_channel_id',
+        'target_language',
     ];
 }

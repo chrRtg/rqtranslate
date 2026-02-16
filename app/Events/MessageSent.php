@@ -7,6 +7,7 @@ use Discord\Parts\Channel\Message;
 use Discord\WebSockets\Event as Events;
 use Laracord\Events\Event;
 use App\Traits\CheckServerPermission;
+use App\Models\ChannelTranslate;
 
 class MessageSent extends Event
 {
@@ -31,10 +32,27 @@ class MessageSent extends Event
             return;
         }
 
-        $this->console()->log('The Message Create event has fired!' . $message);
-        $this->console()->log('Channel ID: ' . $message->channel_id);
-        $this->console()->log('Guild ID: ' . $message->guild_id);
-        $this->message('thank you')->send($message->channel);
+        // check if autotranslate is enabled for the channel, if so translate the message and send it to the specified channel
+        $autotranslateEntry = $this->getAutotranslateEntry($message->guild_id, $message->channel_id);
+        if (!$autotranslateEntry) {
+            return;
+        }
 
+        $deepl = new \App\Services\DeeplTranslate();
+        $translationResult = $deepl->translate($message->content, 'DE');
+        $translated_text = $translationResult->text;
+
+        $this->console()->log('#### AUTOTRANSLATED from ' . $translationResult->detectedSourceLang . ' to DE with ' . $translationResult->billedCharacters . ' characters billed' );
+        $this->message('Autotranslated from #' . $discord->getChannel($message->channel_id)->name)
+            ->body($translated_text)
+            ->send($autotranslateEntry->target_channel_id);
+
+    }
+
+    private function getAutotranslateEntry($guild_id, $source_channel_id)
+    {
+        return ChannelTranslate::where('guild_id', $guild_id)
+            ->where('channel_id', $source_channel_id)
+            ->first();
     }
 }

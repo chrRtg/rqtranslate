@@ -37,10 +37,27 @@ class RQRegisterServer extends SlashCommand
      */
     protected $options = [
         [
-            'name' => 'rq-key',
-            'description' => 'Your RQTranslate registration key.',
-            'type' => Option::STRING,
-            'required' => true,
+            'name' => 'status',
+            'description' => 'View the current registration status and usage for this server.',
+            'type' => Option::SUB_COMMAND,
+        ],
+        [
+            'name' => 'usage',
+            'description' => 'View the current Deepl Usage.',
+            'type' => Option::SUB_COMMAND,
+        ],
+        [
+            'name' => 'register',
+            'description' => 'Register your server with RQTranslate.',
+            'type' => Option::SUB_COMMAND,
+            'options' => [
+                [
+                    'name' => 'rq-key',
+                    'description' => 'Your RQTranslate registration key.',
+                    'type' => Option::STRING,
+                    'required' => true,
+                ],
+            ],
         ],
     ];
 
@@ -72,21 +89,52 @@ class RQRegisterServer extends SlashCommand
      */
     public function handle($interaction)
     {
-        $inputToken = $this->value('rq-key');
+        $inputToken = $this->value('register.rq-key');
 
-        // Validate the input token against the one in the .env file
-        if(!$inputToken || $inputToken !== env('REGISTER_TOKEN')) {
+        if($inputToken) {
+             // If the "register" subcommand is used, attempt to register the server with the
+
+            // Validate the input token against the one in the .env file
+            if (!$inputToken || $inputToken !== env('REGISTER_TOKEN')) {
+                return $this
+                    ->message('Invalid registration key. Please provide a valid RQTranslate registration key to register your server.')
+                    ->reply($interaction, ephemeral: true);
+            }
+
+            // Register the guild in the database
+            $this->registeredGuilds($interaction->guild_id);
+
             return $this
-                ->message('Invalid registration key. Please provide a valid RQTranslate registration key to register your server.')
-                ->reply($interaction);
+                ->message('Your server has been successfully registered with RQTranslate! You can now use translation features in this server.')
+                ->reply($interaction, ephemeral: true);
+        } else if ( array_key_exists('status', $this->value()) ) {
+            $guild = GuildRegistered::where('guild_id', $interaction->guild_id)->first();
+
+            if ($guild) {
+                return $this
+                    ->message('Your server is registered with RQTranslate. You can use translation features in this server.')
+                    ->reply($interaction, ephemeral: true);
+            } else {
+                return $this
+                    ->message('Your server is not registered with RQTranslate. Please register your server to access translation features.')
+                    ->reply($interaction, ephemeral: true);
+            }
+        } else if ( array_key_exists('usage', $this->value()) ) {
+            $deepl = new \App\Services\DeeplTranslate();
+            $usage = $deepl->getUsage();
+
+            $chars_used = $usage->character->count;
+            $chars_limit = $usage->character->limit;
+            $chars_remaining = $chars_limit - $chars_used;
+
+            return $this
+                ->message('Current Deepl Usage: ' . $chars_used . ' characters used out of ' . $chars_limit . '. You have  ' . $chars_remaining . ' characters remaining.')
+                ->reply($interaction, ephemeral: true);
+        } else {
+            return $this
+                ->message('Invalid subcommand. Please use either "status" to check registration status or "register" to register your server with RQTranslate.')
+                ->reply($interaction, ephemeral: true);
         }
-
-        // Register the guild in the database
-        $this->registeredGuilds($interaction->guild_id);
-
-        return $this
-            ->message('Your server has been successfully registered with RQTranslate! You can now use translation features in this server.')
-            ->reply($interaction);
     }
 
     private function registeredGuilds(string $guild_id): GuildRegistered
