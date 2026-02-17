@@ -1,8 +1,8 @@
-# RGTranslate Bot Agent
+# rqtranslate Bot Agent
 
 ## Project Overview
 
-**RGTranslate** is a Discord bot built using the Laracord framework (v2.3+), which combines Laravel's powerful features with DiscordPHP to create a translation bot for Discord servers.
+**rqtranslate** is a Discord bot built using the Laracord framework (v2.3+), which combines Laravel's powerful features with DiscordPHP to create a translation bot for Discord servers.
 
 ### Tech Stack
 - **Language**: PHP 8.2+
@@ -13,7 +13,7 @@
 ## Project Structure
 
 ### Core Files
-- `rgtranslate` - Main executable entry point for the bot
+- `rqtranslate` - Main executable entry point for the bot
 - `composer.json` - Dependency management and project configuration
 - `box.json` - Configuration for building PHAR archives
 
@@ -24,7 +24,7 @@
   - `Models/` - Database models (e.g., User model)
   - `Providers/` - Service providers (BotServiceProvider)
 - **`config/`** - Configuration files
-  - `app.php` - Application settings (name: RGTranslate)
+  - `app.php` - Application settings (name: rqtranslate)
   - `discord.php` - Discord-specific configuration
 - **`database/`** - Database migrations and seeders
 - **`bootstrap/`** - Application bootstrapping
@@ -32,7 +32,7 @@
 ## Architecture & Patterns
 
 ### Bot Configuration
-- **App Name**: RGTranslate
+- **App Name**: rqtranslate
 - **Command Prefix**: `!` (configurable via DISCORD_COMMAND_PREFIX)
 - **Intents**: Default + MESSAGE_CONTENT + GUILD_MEMBERS
 - **HTTP Server**: Optional HTTP server on port 8080
@@ -94,7 +94,7 @@ Define routes in `Bot.php`:
 ## Configuration
 
 ### Environment Variables
-- `APP_NAME` - Application name (default: RGTranslate)
+- `APP_NAME` - Application name (default: rqtranslate)
 - `APP_ENV` - Environment (default: production)
 - `APP_TIMEZONE` - Timezone (default: UTC)
 - `DISCORD_TOKEN` - Discord bot token (required)
@@ -162,7 +162,7 @@ Bot admins are configured in `config/discord.php`:
 - **Discord API**: https://discord.com/developers/docs
 
 ### Repository
-- **GitHub**: https://github.com/chrRtg/rgtranslate
+- **GitHub**: https://github.com/chrRtg/rqtranslate
 - **Laracord Framework**: https://github.com/laracord/framework
 
 ## Common Tasks
@@ -185,7 +185,7 @@ When implementing translation functionality:
 1. Set environment to production
 2. Configure all environment variables
 3. Run `composer install --no-dev`
-4. Use `php rgtranslate` to start bot
+4. Use `php rqtranslate` to start bot
 5. Consider using process managers (PM2, Supervisor)
 
 ## Notes for AI Assistants

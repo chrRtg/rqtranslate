@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'RGTranslate'),
+    'name' => env('APP_NAME', 'RQTranslate'),
 
     /*
     |--------------------------------------------------------------------------

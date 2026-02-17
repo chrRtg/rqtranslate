@@ -7,6 +7,7 @@ use Discord\Parts\WebSockets\MessageReaction;
 use Discord\WebSockets\Event as Events;
 use Laracord\Events\Event;
 use App\Traits\CheckServerPermission;
+use App\Models\ChannelTranslate;
 
 class MessageTranslateByIcon extends Event
 {
@@ -52,12 +53,14 @@ class MessageTranslateByIcon extends Event
             return;
         }
 
-        //### tbd: Check if translation in this channel is enabled and if it a public or emphemeral response
+        // Check if automatic translation is enabled for this channel,
+        // if yes return without responding to avoid conflicts with the automatic translation mode
+        if (ChannelTranslate::isAutomaticTranslationEnabled($reaction->guild_id, $reaction->channel_id)) {
+            return;
+        }
 
         $target_lang = strtolower($this->flagMap[$reaction->emoji->name] ?? null);
         $emojiName = $reaction->emoji->name;
-
-        $this->console()->log('target lang is ' . $target_lang . ' for emoji ' . $emojiName);
 
         if(!$target_lang) {
             return;

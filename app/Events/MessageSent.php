@@ -42,7 +42,6 @@ class MessageSent extends Event
         $translationResult = $deepl->translate($message->content, 'DE');
         $translated_text = $translationResult->text;
 
-        $this->console()->log('#### AUTOTRANSLATED from ' . $translationResult->detectedSourceLang . ' to DE with ' . $translationResult->billedCharacters . ' characters billed' );
         $this->message('Autotranslated from #' . $discord->getChannel($message->channel_id)->name)
             ->body($translated_text)
             ->send($autotranslateEntry->target_channel_id);
@@ -53,6 +52,7 @@ class MessageSent extends Event
     {
         return ChannelTranslate::where('guild_id', $guild_id)
             ->where('channel_id', $source_channel_id)
+            ->where('autotranslate', true)
             ->first();
     }
 }

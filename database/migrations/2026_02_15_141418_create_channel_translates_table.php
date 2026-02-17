@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('guild_id')->index()->unique();
             $table->string('channel_id')->index();
-            $table->string('target_channel_id');
+            $table->string('target_channel_id')->default(null);
             $table->string('target_language')->default('DE');
+            $table->boolean('autotranslate')->default(value: false);
             $table->timestamps();
         });
     }
