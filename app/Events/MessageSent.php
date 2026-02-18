@@ -39,12 +39,21 @@ class MessageSent extends Event
         }
 
         $deepl = new \App\Services\DeeplTranslate();
-        $translationResult = $deepl->translate($message->content, 'DE');
+        $translationResult = $deepl->translate($message->content, $autotranslateEntry->target_language);
         $translated_text = $translationResult->text;
 
-        $this->message('Autotranslated from #' . $discord->getChannel($message->channel_id)->name)
-            ->body($translated_text)
-            ->send($autotranslateEntry->target_channel_id);
+        $this->safeMessageDispatch(
+            fn () => $this->message('Autotranslated from #' . $discord->getChannel($message->channel_id)->name)
+                ->body($translated_text)
+                ->send($autotranslateEntry->target_channel_id),
+            'send',
+            [
+                'event' => 'MESSAGE_CREATE',
+                'guild_id' => $message->guild_id,
+                'source_channel_id' => $message->channel_id,
+                'target_channel_id' => $autotranslateEntry->target_channel_id,
+            ]
+        );
 
     }
 

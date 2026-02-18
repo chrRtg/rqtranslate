@@ -5,6 +5,7 @@ namespace App\Events;
 use Discord\Discord;
 use Discord\Parts\WebSockets\MessageReaction;
 use Discord\WebSockets\Event as Events;
+use Illuminate\Support\Facades\Log;
 use Laracord\Events\Event;
 use App\Traits\CheckServerPermission;
 use App\Models\ChannelTranslate;
@@ -59,15 +60,20 @@ class MessageTranslateByIcon extends Event
             return;
         }
 
-        $target_lang = strtolower($this->flagMap[$reaction->emoji->name] ?? null);
-        $emojiName = $reaction->emoji->name;
+        $target_lang = $this->flagMap[$reaction->emoji->name] ?? null;
+        if (!$target_lang) {
+            return;
+        }
 
-        if(!$target_lang) {
+        $target_lang = strtoupper($target_lang);
+
+        $channel = $discord->getChannel($reaction->channel_id);
+        if (!$channel) {
             return;
         }
 
         // Fetch the original message
-        $discord->getChannel($reaction->channel_id)->messages->fetch($reaction->message_id)->then(
+        $channel->messages->fetch($reaction->message_id)->then(
             function ($message) use ($discord, $reaction, $target_lang) {
                 // Translate the message
                 $deepl = new \App\Services\DeeplTranslate();
@@ -79,11 +85,29 @@ class MessageTranslateByIcon extends Event
                 }
 
                 // Reply with translation
-                $this->message()
-                    ->body($translationResult->text)
-                    ->reply($message);
+                $this->safeMessageDispatch(
+                    fn () => $this->message()
+                        ->body($translationResult->text)
+                        ->reply($message),
+                    'reply',
+                    [
+                        'event' => 'MESSAGE_REACTION_ADD',
+                        'guild_id' => $reaction->guild_id,
+                        'channel_id' => $reaction->channel_id,
+                        'message_id' => $reaction->message_id,
+                        'target_lang' => $target_lang,
+                    ]
+                );
             }
-        );
+        )->otherwise(function (\Throwable $exception) use ($reaction, $target_lang) {
+            Log::error('The Message Reaction Add event failed.', [
+                'guild_id' => $reaction->guild_id,
+                'channel_id' => $reaction->channel_id,
+                'message_id' => $reaction->message_id,
+                'target_lang' => $target_lang,
+                'error' => $exception->getMessage(),
+            ]);
+        });
 
     }
 }

@@ -5,6 +5,7 @@ namespace App\SlashCommands;
 use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\Interactions\Command\Option;
 use App\Models\ChannelTranslate;
+use App\Traits\CheckBotChannelWritePermission;
 use App\Traits\CheckServerPermission;
 use Laracord\Commands\SlashCommand;
 
@@ -110,6 +111,7 @@ class RqChannelTranslate extends SlashCommand
      */
 
     use CheckServerPermission;
+    use CheckBotChannelWritePermission;
 
     /**
      * Handle the command.
@@ -118,13 +120,13 @@ class RqChannelTranslate extends SlashCommand
      * - If the "off" subcommand is used, disable autotranslate for this channel and reply with a confirmation message.
      * - If the "on" subcommand is used, enable autotranslate for this channel to the specified target channel and language, and reply with a confirmation message.
      * @param mixed $interaction
-     * @return \React\Promise\PromiseInterface
+    * @return mixed
      */
     public function handle($interaction)
     {
 
         if (!$this->isDiscordAllowed($interaction)) {
-            return null;
+            return \React\Promise\resolve(null);
         }
 
         // check in Table ChannelTranslate if there is an entry for the current channel_id and for the current diccord Server (guild_id),
@@ -143,27 +145,53 @@ class RqChannelTranslate extends SlashCommand
                 // and create a meaningful message like "Automatic translation to #general in DE is currently enabled for this channel."
                 $channel = $this->discord->getChannel($channelTranslate->target_channel_id);
                 if (!$channel) {
-                    return $this->message('Target channel not found.')->reply($interaction, ephemeral: true);
+                    return $this->safeMessageDispatch(
+                        fn () => $this->message('Target channel not found.')->reply($interaction, ephemeral: true),
+                        'reply',
+                        ['command' => $this->name, 'subcommand' => 'status', 'guild_id' => $interaction->guild_id]
+                    );
                 }
                 $to_channel_name = $channel->name;
                 $to_language = $channelTranslate->target_language;
 
                 // check if autotranslate is enabled for this channel,
                 if ($channelTranslate->autotranslate) {
-                    return $this
-                        ->message('Automatic translation to #' . $to_channel_name . ' in ' . $to_language . ' is currently enabled for this channel.')
-                        ->reply($interaction, ephemeral: true);
+                    if (! $this->botCanWriteToChannel($channelTranslate->target_channel_id)) {
+                        return $this->safeMessageDispatch(
+                            fn () => $this
+                                ->message('Automatic translation to #' . $to_channel_name . ' in ' . $to_language . ' is configured, but I currently cannot write there. Please grant me "View Channel" and "Send Messages" permissions.')
+                                ->reply($interaction, ephemeral: true),
+                            'reply',
+                            ['command' => $this->name, 'subcommand' => 'status', 'guild_id' => $interaction->guild_id]
+                        );
+                    }
+
+                    return $this->safeMessageDispatch(
+                        fn () => $this
+                            ->message('Automatic translation to #' . $to_channel_name . ' in ' . $to_language . ' is currently enabled for this channel.')
+                            ->reply($interaction, ephemeral: true),
+                        'reply',
+                        ['command' => $this->name, 'subcommand' => 'status', 'guild_id' => $interaction->guild_id]
+                    );
                 } else {
-                    return $this
-                        ->message('Translation by emoji flag reaction is currently enabled for this channel.')
-                        ->reply($interaction, ephemeral: true);
+                    return $this->safeMessageDispatch(
+                        fn () => $this
+                            ->message('Translation by emoji flag reaction is currently enabled for this channel.')
+                            ->reply($interaction, ephemeral: true),
+                        'reply',
+                        ['command' => $this->name, 'subcommand' => 'status', 'guild_id' => $interaction->guild_id]
+                    );
                 }
 
             } else {
                 // no autotranslation entry for this channel, reply with a message like "Automatic translation is disabled for this channel."
-                return $this
-                    ->message('Translation is currently disabled for this channel.')
-                    ->reply($interaction, ephemeral: true);
+                return $this->safeMessageDispatch(
+                    fn () => $this
+                        ->message('Translation is currently disabled for this channel.')
+                        ->reply($interaction, ephemeral: true),
+                    'reply',
+                    ['command' => $this->name, 'subcommand' => 'status', 'guild_id' => $interaction->guild_id]
+                );
             }
         } else if (array_key_exists('off', $this->value())) {
             /**
@@ -177,9 +205,13 @@ class RqChannelTranslate extends SlashCommand
                 ->where('guild_id', $interaction->guild_id)
                 ->delete();
 
-            return $this
-                ->message('Automatic translation is now disabled for this channel.')
-                ->reply($interaction, ephemeral: true);
+            return $this->safeMessageDispatch(
+                fn () => $this
+                    ->message('Automatic translation is now disabled for this channel.')
+                    ->reply($interaction, ephemeral: true),
+                'reply',
+                ['command' => $this->name, 'subcommand' => 'off', 'guild_id' => $interaction->guild_id]
+            );
         } else if (array_key_exists('on', $this->value())) {
             /**
              *
@@ -189,9 +221,13 @@ class RqChannelTranslate extends SlashCommand
 
             $this->enableChannelTranslation($interaction->guild_id, $interaction->channel_id);
 
-            return $this
-                ->message('Translation by emoji flag reaction is now enabled for this channel.')
-                ->reply($interaction, ephemeral: true);
+            return $this->safeMessageDispatch(
+                fn () => $this
+                    ->message('Translation by emoji flag reaction is now enabled for this channel.')
+                    ->reply($interaction, ephemeral: true),
+                'reply',
+                ['command' => $this->name, 'subcommand' => 'on', 'guild_id' => $interaction->guild_id]
+            );
         } else if (array_key_exists('auto', $this->value()) && $this->value('auto.channel')) {
             /**
              *
@@ -199,27 +235,44 @@ class RqChannelTranslate extends SlashCommand
              *
              */
 
+            $target_channel_id = $this->value('auto.channel');
+            if (! $this->ensureBotCanWriteToChannel($target_channel_id, $interaction)) {
+                return \React\Promise\resolve(null);
+            }
+
             $target_language = strtoupper($this->value('auto.language'));
             if (!in_array($target_language, $this->supported_languages)) {
-                return $this
-                    ->message('Unsupported language. Supported languages are: ' . implode(', ', $this->supported_languages))
-                    ->reply($interaction, ephemeral: true);
+                return $this->safeMessageDispatch(
+                    fn () => $this
+                        ->message('Unsupported language. Supported languages are: ' . implode(', ', $this->supported_languages))
+                        ->reply($interaction, ephemeral: true),
+                    'reply',
+                    ['command' => $this->name, 'subcommand' => 'auto', 'guild_id' => $interaction->guild_id]
+                );
             }
 
             // add entry to the database with the channel_id, guild_id and target_channel_id
-            $this->enableAutomaticChannelTranslation($interaction->guild_id, $interaction->channel_id, $this->value('auto.channel'), $target_language);
+            $this->enableAutomaticChannelTranslation($interaction->guild_id, $interaction->channel_id, $target_channel_id, $target_language);
 
             // respond with a confirmation message including the name of the target channel and the target language
-            $to_channel_name = $this->discord->getChannel($this->value('auto.channel'))->name;
-            return $this
-                ->message('Automatic translation to #' . $to_channel_name . ' in ' . $target_language . ' is now enabled for this channel.')
-                ->reply($interaction, ephemeral: true);
+            $to_channel_name = $this->discord->getChannel($target_channel_id)->name;
+            return $this->safeMessageDispatch(
+                fn () => $this
+                    ->message('Automatic translation to #' . $to_channel_name . ' in ' . $target_language . ' is now enabled for this channel.')
+                    ->reply($interaction, ephemeral: true),
+                'reply',
+                ['command' => $this->name, 'subcommand' => 'auto', 'guild_id' => $interaction->guild_id]
+            );
         }
 
         // fallback if no valid subcommand or options were provided
-        return $this
-            ->message('Invalid subcommand or missing channel option. Please use /rq-channel-autotranslate with a valid subcommand and options.')
-            ->reply($interaction);
+        return $this->safeMessageDispatch(
+            fn () => $this
+                ->message('Invalid subcommand or missing channel option. Please use /rq-channel-autotranslate with a valid subcommand and options.')
+                ->reply($interaction),
+            'reply',
+            ['command' => $this->name, 'subcommand' => 'unknown', 'guild_id' => $interaction->guild_id]
+        );
     }
 
     /**

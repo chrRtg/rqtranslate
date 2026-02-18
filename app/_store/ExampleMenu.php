@@ -2,6 +2,7 @@
 
 namespace App\Menus;
 
+use App\Traits\HandlesMessageDispatchErrors;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\Interactions\Interaction;
 use Discord\Parts\User\User;
@@ -9,6 +10,8 @@ use Laracord\Commands\ContextMenu;
 
 class ExampleMenu extends ContextMenu
 {
+    use HandlesMessageDispatchErrors;
+
     /**
      * The context menu name.
      *
@@ -56,7 +59,11 @@ class ExampleMenu extends ContextMenu
     public function interactions(): array
     {
         return [
-            'wave' => fn (Interaction $interaction) => $this->message('👋')->reply($interaction),
+            'wave' => fn (Interaction $interaction) => $this->safeMessageDispatch(
+                fn () => $this->message('👋')->reply($interaction),
+                'reply',
+                ['menu' => $this->name, 'route' => 'wave', 'guild_id' => $interaction->guild_id]
+            ),
         ];
     }
 }

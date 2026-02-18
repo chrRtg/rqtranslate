@@ -2,11 +2,14 @@
 
 namespace App\SlashCommands;
 
+use App\Traits\HandlesMessageDispatchErrors;
 use Discord\Parts\Interactions\Interaction;
 use Laracord\Commands\SlashCommand;
 
 class HelloCommand extends SlashCommand
 {
+    use HandlesMessageDispatchErrors;
+
     /**
      * The command name.
      *
@@ -74,8 +77,16 @@ class HelloCommand extends SlashCommand
     public function interactions(): array
     {
         return [
-            'wave' => fn (Interaction $interaction) => $this->message('👋')->reply($interaction),
-            'happy' => fn (Interaction $interaction) => $this->message('😄')->reply($interaction),
+            'wave' => fn (Interaction $interaction) => $this->safeMessageDispatch(
+                fn () => $this->message('👋')->reply($interaction),
+                'reply',
+                ['command' => $this->name, 'route' => 'wave', 'guild_id' => $interaction->guild_id]
+            ),
+            'happy' => fn (Interaction $interaction) => $this->safeMessageDispatch(
+                fn () => $this->message('😄')->reply($interaction),
+                'reply',
+                ['command' => $this->name, 'route' => 'happy', 'guild_id' => $interaction->guild_id]
+            ),
         ];
     }
 }

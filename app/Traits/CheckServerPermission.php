@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Config;
 
 trait CheckServerPermission
 {
+    use HandlesMessageDispatchErrors;
+
     /**
      * Determine if the user or environment is allowed to run this action.
      */
@@ -26,8 +28,15 @@ trait CheckServerPermission
     {
         $text = "⚠️ You're server is not registered to use this.";
 
-        method_exists($action, 'reply')
-            ? $action->reply($text, ephemeral: true)
-            : $action->channel->sendMessage($text);
+        $this->safeMessageDispatch(
+            fn () => method_exists($action, 'reply')
+                ? $action->reply($text, ephemeral: true)
+                : $action->channel->sendMessage($text),
+            'unauthorized_notify',
+            [
+                'guild_id' => $action->guild_id ?? null,
+                'channel_id' => $action->channel_id ?? null,
+            ]
+        );
     }
 }

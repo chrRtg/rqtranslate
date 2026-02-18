@@ -3,6 +3,7 @@
 namespace App\SlashCommands;
 
 use App\Models\GuildRegistered;
+use App\Traits\HandlesMessageDispatchErrors;
 use Discord\Parts\Interactions\Command\Option;
 use Discord\Parts\Interactions\Interaction;
 use Laracord\Commands\SlashCommand;
@@ -16,6 +17,8 @@ use Laracord\Commands\SlashCommand;
  */
 class RQRegisterServer extends SlashCommand
 {
+    use HandlesMessageDispatchErrors;
+
     /**
      * The command name.
      *
@@ -96,28 +99,44 @@ class RQRegisterServer extends SlashCommand
 
             // Validate the input token against the one in the .env file
             if (!$inputToken || $inputToken !== env('REGISTER_TOKEN')) {
-                return $this
-                    ->message('Invalid registration key. Please provide a valid RQTranslate registration key to register your server.')
-                    ->reply($interaction, ephemeral: true);
+                return $this->safeMessageDispatch(
+                    fn () => $this
+                        ->message('Invalid registration key. Please provide a valid RQTranslate registration key to register your server.')
+                        ->reply($interaction, ephemeral: true),
+                    'reply',
+                    ['command' => $this->name, 'subcommand' => 'register', 'guild_id' => $interaction->guild_id]
+                );
             }
 
             // Register the guild in the database
             $this->registeredGuilds($interaction->guild_id);
 
-            return $this
-                ->message('Your server has been successfully registered with RQTranslate! You can now use translation features in this server.')
-                ->reply($interaction, ephemeral: true);
+            return $this->safeMessageDispatch(
+                fn () => $this
+                    ->message('Your server has been successfully registered with RQTranslate! You can now use translation features in this server.')
+                    ->reply($interaction, ephemeral: true),
+                'reply',
+                ['command' => $this->name, 'subcommand' => 'register', 'guild_id' => $interaction->guild_id]
+            );
         } else if ( array_key_exists('status', $this->value()) ) {
             $guild = GuildRegistered::where('guild_id', $interaction->guild_id)->first();
 
             if ($guild) {
-                return $this
-                    ->message('Your server is registered with RQTranslate. You can use translation features in this server.')
-                    ->reply($interaction, ephemeral: true);
+                return $this->safeMessageDispatch(
+                    fn () => $this
+                        ->message('Your server is registered with RQTranslate. You can use translation features in this server.')
+                        ->reply($interaction, ephemeral: true),
+                    'reply',
+                    ['command' => $this->name, 'subcommand' => 'status', 'guild_id' => $interaction->guild_id]
+                );
             } else {
-                return $this
-                    ->message('Your server is not registered with RQTranslate. Please register your server to access translation features.')
-                    ->reply($interaction, ephemeral: true);
+                return $this->safeMessageDispatch(
+                    fn () => $this
+                        ->message('Your server is not registered with RQTranslate. Please register your server to access translation features.')
+                        ->reply($interaction, ephemeral: true),
+                    'reply',
+                    ['command' => $this->name, 'subcommand' => 'status', 'guild_id' => $interaction->guild_id]
+                );
             }
         } else if ( array_key_exists('usage', $this->value()) ) {
             $deepl = new \App\Services\DeeplTranslate();
@@ -127,13 +146,21 @@ class RQRegisterServer extends SlashCommand
             $chars_limit = $usage->character->limit;
             $chars_remaining = $chars_limit - $chars_used;
 
-            return $this
-                ->message('Current Deepl Usage: ' . $chars_used . ' characters used out of ' . $chars_limit . '. You have  ' . $chars_remaining . ' characters remaining.')
-                ->reply($interaction, ephemeral: true);
+            return $this->safeMessageDispatch(
+                fn () => $this
+                    ->message('Current Deepl Usage: ' . $chars_used . ' characters used out of ' . $chars_limit . '. You have  ' . $chars_remaining . ' characters remaining.')
+                    ->reply($interaction, ephemeral: true),
+                'reply',
+                ['command' => $this->name, 'subcommand' => 'usage', 'guild_id' => $interaction->guild_id]
+            );
         } else {
-            return $this
-                ->message('Invalid subcommand. Please use either "status" to check registration status or "register" to register your server with RQTranslate.')
-                ->reply($interaction, ephemeral: true);
+            return $this->safeMessageDispatch(
+                fn () => $this
+                    ->message('Invalid subcommand. Please use either "status" to check registration status or "register" to register your server with RQTranslate.')
+                    ->reply($interaction, ephemeral: true),
+                'reply',
+                ['command' => $this->name, 'subcommand' => 'unknown', 'guild_id' => $interaction->guild_id]
+            );
         }
     }
 

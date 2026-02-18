@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "df0d97fe72c261afe650e4eec224e224",
+    "content-hash": "072e6a917c150577f3293604afe96c3b",
     "packages": [
         {
             "name": "brick/math",
@@ -2265,6 +2265,59 @@
                 "source": "https://github.com/laravel/framework"
             },
             "time": "2025-11-17T22:04:40+00:00"
+        },
+        {
+            "name": "illuminate/log",
+            "version": "v11.47.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/illuminate/log.git",
+                "reference": "73bcd8423739c751442b7e618153c73f78e844cd"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/illuminate/log/zipball/73bcd8423739c751442b7e618153c73f78e844cd",
+                "reference": "73bcd8423739c751442b7e618153c73f78e844cd",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^11.0",
+                "illuminate/support": "^11.0",
+                "monolog/monolog": "^3.0",
+                "php": "^8.2",
+                "psr/log": "^1.0|^2.0|^3.0"
+            },
+            "provide": {
+                "psr/log-implementation": "1.0|2.0|3.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "11.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Illuminate\\Log\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Taylor Otwell",
+                    "email": "taylor@laravel.com"
+                }
+            ],
+            "description": "The Illuminate Log package.",
+            "homepage": "https://laravel.com",
+            "support": {
+                "issues": "https://github.com/laravel/framework/issues",
+                "source": "https://github.com/laravel/framework"
+            },
+            "time": "2025-03-24T11:54:20+00:00"
         },
         {
             "name": "illuminate/macroable",

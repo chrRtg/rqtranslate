@@ -1,0 +1,23 @@
+[2026-02-18 18:02:34] development.ERROR: No arguments expected, got "app:remove". {"exception":"[object] (Symfony\\Component\\Console\\Exception\\RuntimeException(code: 0): No arguments expected, got \"app:remove\". at /home/chr/rqtranslate/vendor/symfony/console/Input/ArgvInput.php:199)
+[stacktrace]
+#0 /home/chr/rqtranslate/vendor/symfony/console/Input/ArgvInput.php(92): Symfony\\Component\\Console\\Input\\ArgvInput->parseArgument()
+#1 /home/chr/rqtranslate/vendor/symfony/console/Input/ArgvInput.php(77): Symfony\\Component\\Console\\Input\\ArgvInput->parseToken()
+#2 /home/chr/rqtranslate/vendor/symfony/console/Input/Input.php(53): Symfony\\Component\\Console\\Input\\ArgvInput->parse()
+#3 /home/chr/rqtranslate/vendor/symfony/console/Command/Command.php(295): Symfony\\Component\\Console\\Input\\Input->bind()
+#4 /home/chr/rqtranslate/vendor/illuminate/console/Command.php(182): Symfony\\Component\\Console\\Command\\Command->run()
+#5 /home/chr/rqtranslate/vendor/symfony/console/Application.php(1102): Illuminate\\Console\\Command->run()
+#6 /home/chr/rqtranslate/vendor/symfony/console/Application.php(356): Symfony\\Component\\Console\\Application->doRunCommand()
+#7 /home/chr/rqtranslate/vendor/symfony/console/Application.php(195): Symfony\\Component\\Console\\Application->doRun()
+#8 /home/chr/rqtranslate/vendor/laravel-zero/foundation/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run()
+#9 /home/chr/rqtranslate/vendor/laravel-zero/framework/src/Kernel.php(111): Illuminate\\Foundation\\Console\\Kernel->handle()
+#10 /home/chr/rqtranslate/rqtranslate(35): LaravelZero\\Framework\\Kernel->handle()
+#11 {main}
+"} 
+[2026-02-18 18:03:50] development.ERROR: Discord message dispatch failed. {"source":"App\\Events\\MessageSent","operation":"send","error":"Forbidden - {
+    \"message\": \"Missing Access\",
+    \"code\": 50001
+}","context":{"event":"MESSAGE_CREATE","guild_id":"349621802215145483","source_channel_id":"349621802215145484","target_channel_id":"1473729132687790252"}} 
+[2026-02-18 18:04:46] development.ERROR: Discord message dispatch failed. {"source":"App\\Events\\MessageSent","operation":"send","error":"Forbidden - {
+    \"message\": \"Missing Access\",
+    \"code\": 50001
+}","context":{"event":"MESSAGE_CREATE","guild_id":"349621802215145483","source_channel_id":"349621802215145484","target_channel_id":"1473729132687790252"}} 
