@@ -7,7 +7,6 @@
   "require": {
     "php": "^8.2",
     "deeplcom/deepl-php": "^1.16",
-    "illuminate/log": "^11.5",
     "laracord/framework": "^2.3"
   },
   "require-dev": {

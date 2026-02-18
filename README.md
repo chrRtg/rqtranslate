@@ -75,11 +75,6 @@ php rqtranslate bot:boot
 Suggested production logging values:
 
 - `APP_ENV=production`
-- `LOG_CHANNEL=stack`
-- `LOG_STACK=single`
-- `LOG_LEVEL=warning`
-- `LOG_SANITY_CHECK=true`
-- `LOG_SANITY_STRICT=true`
 
 ## Discord Commands
 

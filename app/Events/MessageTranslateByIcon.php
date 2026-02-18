@@ -5,7 +5,6 @@ namespace App\Events;
 use Discord\Discord;
 use Discord\Parts\WebSockets\MessageReaction;
 use Discord\WebSockets\Event as Events;
-use Illuminate\Support\Facades\Log;
 use Laracord\Events\Event;
 use App\Traits\CheckServerPermission;
 use App\Models\ChannelTranslate;
@@ -100,13 +99,13 @@ class MessageTranslateByIcon extends Event
                 );
             }
         )->otherwise(function (\Throwable $exception) use ($reaction, $target_lang) {
-            Log::error('The Message Reaction Add event failed.', [
+            $this->console()->log('The Message Reaction Add event has fired!' . var_export([
                 'guild_id' => $reaction->guild_id,
                 'channel_id' => $reaction->channel_id,
                 'message_id' => $reaction->message_id,
                 'target_lang' => $target_lang,
                 'error' => $exception->getMessage(),
-            ]);
+            ], true));
         });
 
     }

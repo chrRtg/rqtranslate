@@ -2,7 +2,6 @@
 
 namespace App\Traits;
 
-use Illuminate\Support\Facades\Log;
 use React\Promise\PromiseInterface;
 use Throwable;
 
@@ -36,7 +35,12 @@ trait HandlesMessageDispatchErrors
     }
 
     /**
-     * Log message dispatch errors in a consistent, meaningful format.
+     * Log message dispatch errors in a consistent, meaningful format.Summary of logMessageDispatchError
+     *
+     * @param string $operation
+     * @param Throwable $exception
+     * @param array $context
+     * @return void
      */
     protected function logMessageDispatchError(string $operation, Throwable $exception, array $context = []): void
     {
@@ -47,6 +51,11 @@ trait HandlesMessageDispatchErrors
             'context' => $context,
         ];
 
-        Log::error('Discord message dispatch failed.', $payload);
+        if (method_exists($this, 'console')) {
+            $this->console()->error('Discord message dispatch failed: ' . var_export($payload, true));
+            return;
+        }
+
+        error_log('Discord message dispatch failed: ' . var_export($payload, true));
     }
 }
