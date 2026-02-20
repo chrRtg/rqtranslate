@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Str;
 use DeepL\Translator;
 use DeepL\TextResult;
 use DeepL\Usage;
+use League\CommonMark\CommonMarkConverter;
 
 class DeeplTranslate
 {
@@ -20,58 +20,50 @@ class DeeplTranslate
 
     /**
      * Translate the given text to the target language using DeepL API.
+     *
+     * While the input is Discord Markdown, we will convert it to HTML for better translation results.
+     * The output from DeepL will be in HTML format, which has to be concerted back to Markdown for Discord.
+     * This needs to happen in the method calling this one.
+     *
      * @param string $text
      * @param string $targetLang
-     * @return DeepL\TextResult
+     * @return \DeepL\TextResult
      */
     public function translate(string $text, string $targetLang = 'EN-US'): TextResult
     {
         $options = [];
         $targetLang = strtoupper($targetLang);
 
+        $options['tag_handling'] = 'html';
+        $options['preserve_formatting'] = true;
+        $options['split_sentences'] = 'nonewlines';
+
         if (in_array($targetLang, $this->formalitySupported)) {
             $options['formality'] = 'less';
         }
 
-        // sanitize the content before sending it to DeepL to avoid issues with non-printable characters,
-        // weird whitespace, and mentions that could break the API or cause unwanted pings in Discord.
-        $clean_text = $this->sanitizeContent($text);
-        if (empty($clean_text) || strlen($clean_text) < 1) {
-            return new TextResult('', null, 0);
-        }
+        // Convert Discord Markdown to HTML for better translation results
+        $converter = new CommonMarkConverter([
+            'html_input' => 'strip', // Security: strip raw HTML
+            'allow_unsafe_links' => false,
+        ]);
 
-        // DeepL returns a TextResult object; we grab the 'text' property
-        return $this->translator->translateText($clean_text, null, $targetLang, $options);
+        $html = $converter->convert($text)->getContent();
+
+        //echo 'Sanitized Text: ' . $html . PHP_EOL;
+
+        // Translate with DeepL, it returns a \DeepL\TextResult object;
+        return $this->translator->translateText($html, null, $targetLang, $options);
     }
 
+
+    /**
+     * Get the current usage of the DeepL API.
+     *
+     * @return Usage
+     */
     public function getUsage(): Usage
     {
         return $this->translator->getUsage();
-    }
-
-    /**
-     * Sanitize the input text to ensure it's clean and won't cause issues with the DeepL API.
-     *
-     * @param string $content
-     * @return array|bool|string|null
-     */
-    private function sanitizeContent(string $content): string
-    {
-        // 1. Remove non-printable control characters (except newlines/tabs)
-        // This prevents "Glitch" text or hidden characters from breaking the API.
-        $content = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $content);
-
-        // 2. Normalize whitespace
-        // DeepL counts every character; stripping double spaces/weird tabs saves money.
-        $content = Str::squish($content);
-
-        // 3. Neutralize Discord Mentions
-        // Replaces '@' with a zero-width space after it so the bot doesn't
-        // accidentally ping @everyone if someone puts that in the text.
-        $content = str_replace(['@everyone', '@here'], ['@ everyone', '@ here'], $content);
-
-        // 4. Force UTF-8 Encoding
-        // DeepL ONLY supports UTF-8. This ensures no weird encoding busts the request.
-        return mb_convert_encoding($content, 'UTF-8', 'UTF-8');
     }
 }

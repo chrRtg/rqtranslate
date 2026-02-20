@@ -8,6 +8,7 @@ use Discord\WebSockets\Event as Events;
 use Laracord\Events\Event;
 use App\Traits\CheckServerPermission;
 use App\Models\ChannelTranslate;
+use League\HTMLToMarkdown\HtmlConverter;
 
 class MessageSent extends Event
 {
@@ -38,10 +39,25 @@ class MessageSent extends Event
             return;
         }
 
+        // translate the message content using DeepL API
         $deepl = new \App\Services\DeeplTranslate();
         $translationResult = $deepl->translate($message->content, $autotranslateEntry->target_language);
-        $translated_text = $translationResult->text;
+        // $this->console()->info($translationResult->text);
 
+        // Convert the translated HTML to Markdown for Discord
+        $converter = new HtmlConverter([
+            'strip_tags' => true,   // Remove tags that don't have Markdown equivalents
+            'hard_break' => true,   // Use GFM style line breaks
+            'italic_style' => '_',  // Discord prefers _ for italics sometimes
+            'bold_style' => '**',
+            'header_style'=>'atx',  // Use ATX style headers (e.g., # Header)
+        ]);
+
+        $translated_text = $converter->convert($translationResult->text);
+
+        // $this->console()->info($translated_text);
+
+        // send the translated message to the target channel, include a note that it was autotranslated and from which channel
         $this->safeMessageDispatch(
             fn () => $this->message('Autotranslated from #' . $discord->getChannel($message->channel_id)->name)
                 ->body($translated_text)
@@ -57,6 +73,13 @@ class MessageSent extends Event
 
     }
 
+    /**
+     * Get the autotranslate entry for the given guild and source channel.
+     *
+     * @param mixed $guild_id
+     * @param mixed $source_channel_id
+     * @return ChannelTranslate|object|null
+     */
     private function getAutotranslateEntry($guild_id, $source_channel_id)
     {
         return ChannelTranslate::where('guild_id', $guild_id)
