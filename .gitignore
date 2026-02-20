@@ -5,3 +5,4 @@
 *.sqlite
 .env
 .env.prod
+rqtranslate.code-workspace
