@@ -6,6 +6,7 @@ use DeepL\Translator;
 use DeepL\TextResult;
 use DeepL\Usage;
 use League\CommonMark\CommonMarkConverter;
+use League\HTMLToMarkdown\HtmlConverter;
 
 class DeeplTranslate
 {
@@ -56,6 +57,25 @@ class DeeplTranslate
         return $this->translator->translateText($html, null, $targetLang, $options);
     }
 
+    /**
+     * Convert translated HTML back to Markdown for Discord.
+     *
+     * @param string $html
+     * @return string
+     */
+    public function htmlToDiscordMarkdown(string $html): string
+    {
+        // Convert the translated HTML to Markdown for Discord
+        $converter = new HtmlConverter([
+            'strip_tags' => true,   // Remove tags that don't have Markdown equivalents
+            'hard_break' => true,   // Use GFM style line breaks
+            'italic_style' => '_',  // Discord prefers _ for italics sometimes
+            'bold_style' => '**',
+            'header_style'=>'atx',  // Use ATX style headers (e.g., # Header)
+        ]);
+
+        return $converter->convert($html);
+    }
 
     /**
      * Get the current usage of the DeepL API.

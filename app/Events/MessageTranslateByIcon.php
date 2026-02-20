@@ -82,11 +82,13 @@ class MessageTranslateByIcon extends Event
                 if ($translationResult->detectedSourceLang === $target_lang) {
                     return;
                 }
+                // Convert the translated HTML to Markdown for Discord
+                $translated_text = $deepl->htmlToDiscordMarkdown($translationResult->text);
 
                 // Reply with translation
                 $this->safeMessageDispatch(
-                    fn () => $this->message()
-                        ->body($translationResult->text)
+                    fn() => $this->message()
+                        ->body($translated_text)
                         ->reply($message),
                     'reply',
                     [
