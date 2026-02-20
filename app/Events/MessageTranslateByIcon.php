@@ -8,6 +8,7 @@ use Discord\WebSockets\Event as Events;
 use Laracord\Events\Event;
 use App\Traits\CheckServerPermission;
 use App\Models\ChannelTranslate;
+use App\Services\DiscordTools;
 
 class MessageTranslateByIcon extends Event
 {
@@ -85,20 +86,27 @@ class MessageTranslateByIcon extends Event
                 // Convert the translated HTML to Markdown for Discord
                 $translated_text = $deepl->htmlToDiscordMarkdown($translationResult->text);
 
-                // Reply with translation
-                $this->safeMessageDispatch(
-                    fn() => $this->message()
-                        ->body($translated_text)
-                        ->reply($message),
-                    'reply',
-                    [
-                        'event' => 'MESSAGE_REACTION_ADD',
-                        'guild_id' => $reaction->guild_id,
-                        'channel_id' => $reaction->channel_id,
-                        'message_id' => $reaction->message_id,
-                        'target_lang' => $target_lang,
-                    ]
-                );
+                // if the translated text exceeds Discord's message length limit,
+                // split it into multiple messages
+                $discordTools = new DiscordTools();
+                $text_chunks = $discordTools->splitMarkdown($translated_text);
+
+                foreach ($text_chunks as $text_chunk) {
+                    // Reply with translation
+                    $this->safeMessageDispatch(
+                        fn() => $this->message()
+                            ->body($text_chunk)
+                            ->reply($message),
+                        'reply',
+                        [
+                            'event' => 'MESSAGE_REACTION_ADD',
+                            'guild_id' => $reaction->guild_id,
+                            'channel_id' => $reaction->channel_id,
+                            'message_id' => $reaction->message_id,
+                            'target_lang' => $target_lang,
+                        ]
+                    );
+                }
             }
         )->otherwise(function (\Throwable $exception) use ($reaction, $target_lang) {
             $this->console()->log('The Message Reaction Add event has fired!' . var_export([

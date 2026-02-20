@@ -8,6 +8,7 @@ use Discord\WebSockets\Event as Events;
 use Laracord\Events\Event;
 use App\Traits\CheckServerPermission;
 use App\Models\ChannelTranslate;
+use App\Services\DiscordTools;
 
 class MessageSent extends Event
 {
@@ -45,22 +46,31 @@ class MessageSent extends Event
 
         // Convert the translated HTML to Markdown for Discord
         $translated_text = $deepl->htmlToDiscordMarkdown($translationResult->text);
-        // $this->console()->info($translated_text);
 
-        // send the translated message to the target channel, include a note that it was autotranslated and from which channel
-        $this->safeMessageDispatch(
-            fn () => $this->message('Autotranslated from #' . $discord->getChannel($message->channel_id)->name)
-                ->body($translated_text)
-                ->send($autotranslateEntry->target_channel_id),
-            'send',
-            [
-                'event' => 'MESSAGE_CREATE',
-                'guild_id' => $message->guild_id,
-                'source_channel_id' => $message->channel_id,
-                'target_channel_id' => $autotranslateEntry->target_channel_id,
-            ]
-        );
+        //$this->console()->info($translated_text);
+        //$this->console()->info('length: ' . mb_strlen($translated_text));
 
+        $discordTools = new DiscordTools();
+        $text_chunks = $discordTools->splitMarkdown($translated_text);
+
+        // $this->console()->info('Split into ' . var_export(($text_chunks), true));
+
+        foreach ($text_chunks as $text_chunk) {
+            // send the translated message to the target channel, include a note that it was autotranslated and from which channel
+            $this->safeMessageDispatch(
+                fn () => $this->message('Autotranslated from #' . $discord->getChannel($message->channel_id)->name)
+                    ->body($text_chunk)
+                    ->send($autotranslateEntry->target_channel_id),
+                'send',
+                [
+                    'event' => 'MESSAGE_CREATE',
+                    'guild_id' => $message->guild_id,
+                    'source_channel_id' => $message->channel_id,
+                    'target_channel_id' => $autotranslateEntry->target_channel_id,
+                ]
+            );
+        }
+        return;
     }
 
     /**
