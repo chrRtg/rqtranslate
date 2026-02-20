@@ -2,138 +2,124 @@
 
 RQTranslate is a Discord translation bot built with [Laracord](https://github.com/laracord/framework) and DeepL.
 
-## Features
+## What it does
 
-- Translation by emoji reaction (flag emoji on a message)
-- Optional automatic channel translation mode
-- Per-server registration gate using a registration key
-- Logging via Laravel/Laravel Zero `Log` channels and levels
-- Startup and manual logging sanity checks
+- Server-level access control via registration token
+- Message translation by flag reaction
+- Automatic channel translation mode (source channel -> target channel)
+- Markdown-aware message splitting to stay under Discord message limits
+- DeepL usage reporting via slash command
 
-## Bot Invite
+## Slash commands
 
-Use this invite URL:
+### `/rq-register-server`
 
-https://discord.com/api/oauth2/authorize?client_id=<discord_application_id>&permissions=281600&scope=bot%20applications.commands
+- `register rq-key:<key>`: registers current guild (must match `REGISTER_TOKEN`)
+- `status`: shows whether the current guild is registered
+- `usage`: shows DeepL character usage
 
-## Local Installation
+### `/rq-channel-translate`
+
+- `status`: show translation mode for current channel
+- `on`: enable translation-by-reaction in current channel
+- `off`: disable translation settings for current channel
+- `auto channel:<target> language:<lang>`: enable autotranslate to target channel/language
+
+Supported `auto` languages: `en-us`, `fr`, `es`, `pl`, `it`, `ua`, `de`
+
+## Bot invite
+
+Use:
+
+```https://discord.com/api/oauth2/authorize?client_id=<discord_application_id>&permissions=281600&scope=bot%20applications.commands```
+
+## Local setup
 
 ### 1) Prerequisites
 
 - PHP 8.2+
 - Composer
-- A Discord application + bot token
-- A DeepL API key
+- Discord bot token + application ID
+- DeepL API key
 
-### 2) Install dependencies
+### 2) Install
 
 ```bash
 composer install
-```
-
-### 3) Configure environment
-
-```bash
 cp .env.example .env
 ```
 
-Set at least:
+Set required values in `.env`:
 
 - `DISCORD_TOKEN`
 - `DISCORD_APPLICATION_ID`
 - `DEEPL_API_KEY`
 - `REGISTER_TOKEN`
 
-Generate app key:
-
-```bash
-php rqtranslate key:generate
-```
-
-### 4) Database
-
-The database is created on the first run of the bot.
-
-### 5) Verify logging setup (recommended)
-
-```bash
-php rqtranslate logging:check
-```
-
-### 6) Boot the bot
+Start bot:
 
 ```bash
 php rqtranslate bot:boot
 ```
 
-## Production Notes
-
-- Keep secrets only in real environment variables or private `.env` files.
-- Do not commit production tokens/keys to git.
-- If credentials were exposed, rotate them immediately (Discord token, DeepL key, registration key).
-
-Suggested production logging values:
-
-- `APP_ENV=production`
-
-## Discord Commands
-
-### `/rq-register-server`
-
-Server registration and usage checks.
-
-- `register rq-key:<key>`
-  - Registers the guild if key matches `REGISTER_TOKEN`
-- `status`
-  - Shows whether current server is registered
-- `usage`
-  - Shows current DeepL usage
-
-### `/rq-channel-translate`
-
-Channel translation mode control.
-
-- `status`
-  - Shows current translation mode for this channel
-- `on`
-  - Enables translation by emoji reaction for this channel
-- `off`
-  - Disables translation settings for this channel
-- `auto channel:<target> language:<lang>`
-  - Enables automatic translation from current channel to target channel
-  - Validates bot write permission for target channel before enabling
-
-Supported language choices in command:
-
-- `en-us`, `fr`, `es`, `pl`, `it`, `ua`, `de`
-
-## Runtime Behavior
-
-- Unregistered servers are blocked and receive a warning message.
-- Emoji reaction translation is skipped when autotranslate is enabled for that channel.
-- In `auto` mode, the bot currently translates incoming messages to German (`DE`) in the event handler.
-- Message send/reply dispatch errors are caught and logged.
-
-## Logging
-
-Logging is configured in `config/logging.php` and controlled by env:
-
-- `LOG_CHANNEL`
-- `LOG_STACK`
-- `LOG_LEVEL`
-
-Sanity checks:
-
-- Manual: `php rqtranslate logging:check`
-- Startup: runs in `Bot::beforeBoot()` when `LOG_SANITY_CHECK=true`
-- Strict fail-fast on boot when `LOG_SANITY_STRICT=true`
-
 ## Build
 
 ```bash
-./rqtranslate app:build
+php rqtranslate app:build
 ```
 
----
+## Restricted-server operation (cron scripts)
+
+For environments without process managers, use scripts in `linux-bot/`:
+
+- `linux-bot/runbot.sh`: ensures bot is running, starts it if down, writes `bot.pid`
+- `linux-bot/checkbot.sh`: reports running/dead/offline state from `bot.pid`
+- `linux-bot/stopbot.sh`: stops bot process and cleans pid file
+
+The scripts are configured for:
+
+- Bot directory: `/home/www/discordbots/rqtranslate`
+- PHP binary: `/usr/bin/php8.4`
+- Entrypoint: `rqtranslate`
+
+Run every minute via cron on restricted hosts:
+
+```cron
+* * * * * /home/www/discordbots/rqtranslate/linux-bot/runbot.sh
+```
+
+Adjust `BOT_DIR` / `PHP_BIN` inside scripts for your server.
+
+## Troubleshooting
+
+- Bot does not start:
+  - Check `.env` has `DISCORD_TOKEN`, `DISCORD_APPLICATION_ID`, `DEEPL_API_KEY`, `REGISTER_TOKEN`
+  - Start with `php rqtranslate bot:boot` and watch output for errors
+
+- Bot appears offline on restricted server:
+  - Run `linux-bot/checkbot.sh`
+  - If dead/offline, run `linux-bot/runbot.sh`
+  - Ensure script paths match your host (`BOT_DIR`, `PHP_BIN`)
+
+- `Permission denied` when running scripts:
+  - Make scripts executable: `chmod +x linux-bot/*.sh`
+
+- Bot cannot send to target channel in `auto` mode:
+  - Grant bot `View Channel` and `Send Messages` permissions in the target channel
+
+- `/rq-register-server register` fails:
+  - Confirm provided key exactly matches `REGISTER_TOKEN`
+
+- Translation fails or usage is exhausted:
+  - Verify `DEEPL_API_KEY`
+  - Check quota with `/rq-register-server usage`
+
+
+## your Feedback
+
+For change requests and bug reports please use the "Issues" in the [project github](https://github.com/chrRtg/rqtranslate).
+
+In case you want to connect with the author visit my [Discord}(https://discord.gg/qPz5JD4NWG)
+
 
 (C) 2026 by [RtgQuack](https://discord.com/invite/qPz5JD4NWG)
