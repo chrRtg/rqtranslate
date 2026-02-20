@@ -1,6 +1,6 @@
 # RQTranslate Discord Bot
 
-RQTranslate is a Discord translation bot built with [Laracord](https://github.com/laracord/framework) and DeepL.
+RQTranslate is a Discord translation bot built with [Laracord](https://github.com/laracord/framework) and [DeepL API](https://github.com/DeepLcom/deepl-php).
 
 ## What it does
 
